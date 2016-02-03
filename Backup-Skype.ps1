@@ -37,14 +37,11 @@ Param()
 
 # Array of network paths to back up to one or multiple locations
 # Change UNC Path to Existing File Share
-[array]$FileShares = @("\\SERVER\FILESHARE")
+[array]$FileShares = @("\\SERVER\FILESHARE","\\SERVER2\FILESHARE")
 
 # Get various date fields
 $RemoveDate = ((Get-Date).AddDays(-30))
 $Now = Get-Date -UFormat %m-%d-%Y_%H%M%S
-
-# Create array of file shares if you want to back up to multiple paths
-[array]$BackupPaths = @("$FileShare\$Now")
 
 # Gets all Front End User Pools in the Environment
 [array]$AllUserPools = @((Get-CsService -UserServer).PoolFqdn)
@@ -57,52 +54,56 @@ $Now = Get-Date -UFormat %m-%d-%Y_%H%M%S
 # Adjust the variable $RemoveDate to your preference
 foreach ($Share in $FileShares)
 {
-    Write-Verbose -Message "Deleting Old Backups in $Share"
-    Get-ChildItem -Path $Shared | Where-Object {$_.LastWriteTime -lt $RemoveDate} | Remove-Item -Recurse
+    Write-Verbose -Message "Deleting Backups in $Share older than $RemoveDate"
+    Get-ChildItem -Path $Share | Where-Object {$_.LastWriteTime -lt $RemoveDate} | Remove-Item -Recurse
 }
 
-foreach ($Path in $BackupPaths)
-{    
+foreach ($Share in $FileShares)
+{
+    # Create UNC path for current backup
+    [string]$BackupPath = "$Share\$Now"
+
     # Creates backup directory for current backup if it does not exist
-    if ((Test-Path -Path $Path) -eq $false)
+    if ((Test-Path -Path $BackupPath) -eq $false)
     {
-        Write-Verbose "Creating backup directory $Path"
-        New-Item -Path $Path -ItemType directory | Out-Null
+        Write-Verbose -Message "Creating backup directory $BackupPath"
+        New-Item -Path $BackupPath -ItemType Directory | Out-Null
     }
 
     # Export Common Items to all Pools
-    Write-Verbose "Exporting Topology"
-    Export-CsConfiguration -FileName $Path\TopologyBackup.zip
-    (Get-CsTopology -AsXml).ToString() > $Path\TopologyBackup.xml
+    Write-Verbose -Message "Exporting Topology"
+    Export-CsConfiguration -FileName "$BackupPath\TopologyBackup.zip"
+    (Get-CsTopology -AsXml).ToString() > "$BackupPath\TopologyBackup.xml"
 
-    Write-Verbose "Exporting Location Information Server"
-    Export-CsLisConfiguration -FileName $Path\LISConfig.zip
+    Write-Verbose -Message "Exporting Location Information Server"
+    Export-CsLisConfiguration -FileName "$BackupPath\LISConfig.zip"
 
-    Write-Verbose "Exporting Dial Plans"
-    Get-CsDialPlan | Export-Clixml -Path $Path\DialPlan.xml
+    Write-Verbose -Message "Exporting Dial Plans"
+    Get-CsDialPlan | Export-Clixml -Path "$BackupPath\DialPlan.xml"
 
-    Write-Verbose "Exporting Voice Policies"
-    Get-CsVoicePolicy | Export-Clixml -Path $Path\VoicePolicy.xml
+    Write-Verbose -Message "Exporting Voice Policies"
+    Get-CsVoicePolicy | Export-Clixml -Path "$BackupPath\VoicePolicy.xml"
 
-    Write-Verbose "Exporting Voice Routes"
-    Get-CsVoiceRoute | Export-Clixml -Path $Path\VoiceRoute.xml
+    Write-Verbose -Message "Exporting Voice Routes"
+    Get-CsVoiceRoute | Export-Clixml -Path "$BackupPath\VoiceRoute.xml"
 
-    Write-Verbose "Exporting PSTN Usage"
-    Get-CsPstnUsage | Export-Clixml -Path $Path\PSTNUsage.xml
+    Write-Verbose -Message "Exporting PSTN Usage"
+    Get-CsPstnUsage | Export-Clixml -Path "$BackupPath\PSTNUsage.xml"
 
-    Write-Verbose "Exporting Voice Configuration"
-    Get-CsVoiceConfiguration | Export-Clixml -Path $Path\VoiceConfiguration.xml
+    Write-Verbose -Message "Exporting Voice Configuration"
+    Get-CsVoiceConfiguration | Export-Clixml -Path "$BackupPath\VoiceConfiguration.xml"
 
-    Write-Verbose "Exporting Trunk Configuration"
-    Get-CsTrunkConfiguration | Export-Clixml -Path $Path\TrunkConfiguration.xml
+    Write-Verbose -Message "Exporting Trunk Configuration"
+    Get-CsTrunkConfiguration | Export-Clixml -Path "$BackupPath\TrunkConfiguration.xml"
     
-    # Export Pool Specific Settings and Applications
+    # Export Pool Specific Response Group Settings and User Data
     foreach ($Pool in $AllUserPools)
     {
-        Write-Verbose "Exporting $Pool Response Groups"
-        Export-CsRgsConfiguration -Source “ApplicationServer:$Pool” -FileName $Path\$Pool-RgsConfig.zip
+        Write-Verbose -Message "Exporting $Pool Response Groups"
+        Export-CsRgsConfiguration -Source “ApplicationServer:$Pool” -FileName "$BackupPath\$Pool-RgsConfig.zip"
 
-        Write-Verbose "Exporting $Pool User Data"
-        Export-CsUserData -PoolFqdn $Pool -FileName $Path\$Pool-UserData.zip
-    } # End Of foreach ($Pool in $AllUserPools)
-} # End of foreach ($Path in $BackupPaths)
+        Write-Verbose -Message "Exporting $Pool User Data"
+        Export-CsUserData -PoolFqdn $Pool -FileName "$BackupPath\$Pool-UserData.zip"
+    } # End of foreach ($Pool in $AllUserPools)
+
+} # End of foreach ($Share in $FileShares)
