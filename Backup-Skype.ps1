@@ -26,6 +26,7 @@ Always review any code and steps before applying to a production system to under
 
 Version Notes
 V1.00 - 2/03/2016 - Initial Version
+V1.10 - 3/04/2016 - Removed erroneous $FileShare settings in Variables section
 #>
 
 #*************************************************************************************
@@ -44,8 +45,6 @@ Param(
 #*************************************************************************************
 #**************************     Variables     ****************************************
 #*************************************************************************************
-
-[string]$FileShare = "\\localhost\c$\Down"
 
 # Get various date fields
 [string]$RemoveDate = ((Get-Date).AddDays(-30))
