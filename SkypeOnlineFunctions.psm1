@@ -567,15 +567,47 @@ Requires that the Skype Online Connector PowerShell module be installed.
     
     if ((Get-PsSession).ComputerName -notlike "*.online.lync.com")
     {
-        try
+        $moduleVersion = (Get-Module -Name SkypeOnlineConnector).Version
+        if ($moduleVersion.Major -le "6") # Version 6 and lower do not support MFA authentication for Skype Module PowerShell; also allows use of older PSCredential objects
         {
-            $SkypeOnlineSession = New-CsOnlineSession -Credential (Get-Credential $UserName -Message "Enter the sign-in address and password of a Global or Skype for Business Admin") -ErrorAction STOP
-            Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
+            try
+            {
+                $SkypeOnlineSession = New-CsOnlineSession -Credential (Get-Credential $UserName -Message "Enter the sign-in address and password of a Global or Skype for Business Admin") -ErrorAction STOP
+                Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
+            }
+            catch
+            {
+                $errorMessage = $_
+                if ($errorMessage -like "*Please create a new credential object*")
+                {
+                    Write-Warning -Message "Logon failed. This may be due to multi-factor being enabled for the user account and not using the latest Skype for Business Online PowerShell module."
+                }
+                else
+                {
+                    Write-Warning -Message $_
+                }
+            }
         }
-        catch
+        else # This should be all newer version than 6; does not support PSCredential objects but support MFA
         {
-            Write-Warning -Message $_
-        }        
+            try
+            {
+                if ($PSBoundParameters.ContainsKey("UserName"))
+                {
+                    $SkypeOnlineSession = New-CsOnlineSession $UserName -ErrorAction STOP
+                }
+                else
+                {
+                    $SkypeOnlineSession = New-CsOnlineSession -ErrorAction STOP
+                }
+
+                Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
+            }
+            catch
+            {
+                Write-Warning -Message $_
+            }
+        }
     }
     else
     {
