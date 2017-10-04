@@ -1,7 +1,6 @@
 ﻿<#
 .SYNOPSIS
 Creates backup of various components of a Skype for Business environment
-Current Version: 1.00
 
 .DESCRIPTION
 This script will back up various components of a Skype for Business environment
@@ -12,7 +11,7 @@ Enter a UNC path to a file share to save the backup data.
 Example:  \\SERVER\FILESHARE
 
 .EXAMPLE
-Backup-Skype.ps1 -FileShare "\\SERVER\FILESHARE"
+Backup-SkypeServer.ps1 -FileShare "\\SERVER\FILESHARE"
 This command will back up the Skype environment to \\SERVER\FILESHARE.
 
 .NOTES
@@ -25,8 +24,9 @@ Any and all technical advice, scripts, and documentation are provided as is with
 Always review any code and steps before applying to a production system to understand their full impact.
 
 Version Notes
-V1.00 - 2/03/2016 - Initial Version
-V1.10 - 3/04/2016 - Removed erroneous $FileShare settings in Variables section
+V1.0 - 2/03/2016 - Initial Version
+V1.1 - 3/04/2016 - Removed erroneous $FileShare settings in Variables section
+V2.0 - 10/4/2017 - Updated name to Backup-SkypeServer
 #>
 
 #*************************************************************************************
