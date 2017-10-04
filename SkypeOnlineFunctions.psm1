@@ -21,7 +21,7 @@ V1.00 - 10/2/2017 - Initial Version
 
 # *** Exported Functions ***
 
-function Add-SkypeUserLicense
+function Add-SkypeOnlineUserLicense
 {
 <#
 .SYNOPSIS
@@ -66,15 +66,15 @@ Adds an International Calling Plan add-on license to the user account.
 Adds a PSTN Consumption add-on license to the user account.
 
 .EXAMPLE
-Add-SkypeUserLicense -Identity Joe@contoso.com -AddE3 -AddPhoneSystem
+Add-SkypeOnlineUserLicense -Identity Joe@contoso.com -AddE3 -AddPhoneSystem
 Example 1 will add the an E3 and Cloud PBX add-on license to Joe@contoso.com
 
 .EXAMPLE
-Add-SkypeUserLicense -Identity Joe@contoso.com -AddE5 -AddDomesticCallingPlan
+Add-SkypeOnlineUserLicense -Identity Joe@contoso.com -AddE5 -AddDomesticCallingPlan
 Example 2 will add the an E5 and Domestic Calling Plan add-on license to Joe@contoso.com
 
 .EXAMPLE
-Add-SkypeUserLicense -Identity Joe@contoso.com -AddSkypeStandalone
+Add-SkypeOnlineUserLicense -Identity Joe@contoso.com -AddSkypeStandalone
 Example 3 will add the a Skype for Business Plan 2 license to Joe@contoso.com
 
 .NOTES
@@ -510,7 +510,7 @@ available before attempting to assign the license.
             }
         } # End of foreach ($ID in $Identity)
     } # End of PROCESS
-} # End of Add-SkypeUserLicense
+} # End of Add-SkypeOnlineUserLicense
 
 function Connect-SkypeOnline
 {
@@ -711,7 +711,7 @@ Example 1 will remove any current Skype for Business Online remote PowerShell se
     }
 } # End of Disconnect-SkypeOnline
 
-function Get-SkypeConferenceDialInNumbers
+function Get-SkypeOnlineConferenceDialInNumbers
 {
 <#
 .SYNOPSIS
@@ -727,7 +727,7 @@ with the tenant's default domain name (i.e. contoso.com).
 The Skype for Business Online Tenant domain to gather the conference dial-in numbers.
 
 .EXAMPLE
-Get-SkypeConferenceDialInNumbers -Domain contoso.com
+Get-SkypeOnlineConferenceDialInNumbers -Domain contoso.com
 Example 1 will gather the conference dial-in numbers for contoso.com based on their conference dial-in number web page.
 #>
     [CmdletBinding()]
@@ -769,9 +769,9 @@ Example 1 will gather the conference dial-in numbers for contoso.com based on th
             Write-Output $output
         }
     }
-} # End of Get-SkypeConferenceDialInNumbers
+} # End of Get-SkypeOnlineConferenceDialInNumbers
 
-function Get-SkypeUserLicense
+function Get-SkypeOnlineUserLicense
 {
 <#
 .SYNOPSIS
@@ -929,9 +929,9 @@ Output can be redirected to a file or grid-view.
             Write-Output $output
         } # End of foreach ($UserPrincipal in $Identity)
     } # End of PROCESS
-} # End of Get-SkypeUserLicense
+} # End of Get-SkypeOnlineUserLicense
 
-function Get-SkypeTenantLicenses
+function Get-SkypeOnlineTenantLicenses
 {
 <#
 .SYNOPSIS
@@ -943,7 +943,7 @@ plans as well as add-on and grouped license SKUs. This command displays these li
 format with descriptive names, active, consumed, remaining, and expiring licenses.
 
 .EXAMPLE
-Get-SkypeTenantLicenses
+Get-SkypeOnlineTenantLicenses
 Example 1 will display all the Skype related licenses for the tenant.
 
 .NOTES
@@ -999,7 +999,7 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
             }
         }    
     } # End of foreach ($tenantSKU in $tenantSKUs}
-} # End of Get-SkypeTenantLicense
+} # End of Get-SkypeOnlineTenantLicenses
 
 function Set-SkypeOnlineUserPolicy
 {
@@ -1457,6 +1457,6 @@ function New-LicenseObject
     return $assignedLicensesObj
 }
 
-Export-ModuleMember -Function Add-SkypeUserLicense, Connect-SkypeOnline, Disconnect-SkypeOnline,`
-                              Get-SkypeConferenceDialInNumbers, Get-SkypeUserLicense, Get-SkypeTenantLicenses, Set-SkypeOnlineUserPolicy,`
+Export-ModuleMember -Function Add-SkypeOnlineUserLicense, Connect-SkypeOnline, Disconnect-SkypeOnline,`
+                              Get-SkypeOnlineConferenceDialInNumbers, Get-SkypeOnlineUserLicense, Get-SkypeOnlineTenantLicenses, Set-SkypeOnlineUserPolicy,`
                               Test-SkypeOnlineExternalDNS
