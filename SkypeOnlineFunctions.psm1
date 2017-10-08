@@ -130,6 +130,7 @@ available before attempting to assign the license.
 
     BEGIN
     {
+        <#
         # Verify Azure Active Directory PowerShell Module (AzureAD) is installed on the PC
         if ((Get-Module -ListAvailable).Name -notcontains "AzureAD")
         {
@@ -145,6 +146,32 @@ available before attempting to assign the license.
             Write-Warning -Message "You must connect to Azure AD before continuing"
             Connect-AzureAD -Credential (Get-Credential -Message "Enter the sign-in name and password for an O365 Global Admin")
             $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction STOP
+        }
+        #>
+                
+        if ((TestAzureADModule) -eq $false) {RETURN}
+
+        if ((TestAzureADConnection) -eq $false)
+        {
+            try
+            {
+                Connect-AzureAD -ErrorAction STOP | Out-Null
+            }
+            catch
+            {
+                Write-Warning $_
+                CONTINUE
+            }
+        }
+
+        try
+        {
+            $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction STOP
+        }
+        catch
+        {
+            Write-Warning $_
+            RETURN
         }
 
         # Build Skype SKU Variables from Available Licenses in the Tenant
@@ -176,7 +203,7 @@ available before attempting to assign the license.
             }
             catch
             {
-                $output = Get-ActionOutputObject2 -Name $ID -Result "Not a valid user account"
+                $output = GetActionOutputObject2 -Name $ID -Result "Not a valid user account"
                 Write-Output $output
                 continue
             }
@@ -194,23 +221,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $SkypeStandalonePlan -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $SkypeStandalonePlan
+                            $license = NewLicenseObject -SkuId $SkypeStandalonePlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP                                
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: Skype Standalone Plan license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Skype Standalone Plan license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Skype Standalone Plan license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Skype Standalone Plan license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned Skype Standalone Plan"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Skype Standalone Plan"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No Skype Standalone Plan licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Skype Standalone Plan licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -226,23 +253,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E1 -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $E1
+                            $license = NewLicenseObject -SkuId $E1
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: E1 license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E1 license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E1 license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E1 license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned E1"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E1"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No E1 licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E1 licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -260,13 +287,13 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E3 -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $E3
+                            $license = NewLicenseObject -SkuId $E3
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: E3 license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E3 license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E3 license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E3 license: $_"
                         }
                     }
                     else
@@ -276,7 +303,7 @@ available before attempting to assign the license.
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No E3 licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E3 licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -292,23 +319,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E5WithPhoneSystem -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $E5WithPhoneSystem
+                            $license = NewLicenseObject -SkuId $E5WithPhoneSystem
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: E5 license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E5 license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No E5 licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E5 licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -324,23 +351,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E5NoAudioConferencing -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $E5NoAudioConferencing
+                            $license = NewLicenseObject -SkuId $E5NoAudioConferencing
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: E5 without Audio Conferencing license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E5 without Audio Conferencing license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 without Audio Conferencing license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 without Audio Conferencing license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5 without Audio Conferencing"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5 without Audio Conferencing"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No E5 without Audio Conferencing licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E5 without Audio Conferencing licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -358,23 +385,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $AudioConferencing -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $AudioConferencing
+                            $license = NewLicenseObject -SkuId $AudioConferencing
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: Audio Conferencing add-on license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Audio Conferencing add-on license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Audio Conferencing add-on license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Audio Conferencing add-on license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned Audio Conferencing"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Audio Conferencing"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No Audio Conferencing add-on licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Audio Conferencing add-on licenses found in tenant"
                 }
 
                 # Output results of AudioConferencing assignment
@@ -391,23 +418,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $PhoneSystem -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $PhoneSystem
+                            $license = NewLicenseObject -SkuId $PhoneSystem
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: Phone System add-on license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Phone System add-on license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Phone System add-on license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Phone System add-on license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned Phone System add-on"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Phone System add-on"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No Phone System add-on licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Phone System add-on licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -423,23 +450,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $DomesticCallingPlan -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $DomesticCallingPlan
+                            $license = NewLicenseObject -SkuId $DomesticCallingPlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: Domestic Calling Plan license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Domestic Calling Plan license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Domestic Calling Plan license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Domestic Calling Plan license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned Domestic Calling Plan"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Domestic Calling Plan"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No Domestic Calling Plan licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Domestic Calling Plan licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -455,23 +482,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $InternationalCallingPlan -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $InternationalCallingPlan
+                            $license = NewLicenseObject -SkuId $InternationalCallingPlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: International Calling Plan license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: International Calling Plan license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign International Calling Plan license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign International Calling Plan license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned International Calling Plan"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned International Calling Plan"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No International Calling Plan licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No International Calling Plan licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -487,23 +514,23 @@ available before attempting to assign the license.
                         try
                         {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $CommunicationsCredit -ErrorAction STOP
-                            $license = New-LicenseObject -SkuId $CommunicationsCredit
+                            $license = NewLicenseObject -SkuId $CommunicationsCredit
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "SUCCESS: Communications Credit license assigned"
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Communications Credit license assigned"
                         }
                         catch
                         {
-                            $output = Get-ActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Communications Credit license: $_"
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Communications Credit license: $_"
                         }
                     }
                     else
                     {
-                        $output = Get-ActionOutputObject2 -Name $ID -Result "INFO: User already assigned Communications Credit License"
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Communications Credit License"
                     }
                 }
                 else
                 {
-                    $output = Get-ActionOutputObject2 -Name $ID -Result "WARNING: No Communications Credit licenses found in tenant"
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Communications Credit licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -544,75 +571,67 @@ Requires that the Skype Online Connector PowerShell module be installed.
         [Parameter()]
         [string]$UserName         
     )
-
-    if ((Get-Module).Name -notcontains "SkypeOnlineConnector")
-    {
-        Write-Verbose -Message "SkypeOnlineConnector module not loaded"
-        try
-        {
-            Write-Verbose -Message "Attempting to import SkypeOnlineConnector"
-            Import-Module SkypeOnlineConnector -ErrorAction STOP
-        }
-        catch [System.IO.FileNotFoundException]
-        {
-            Write-Warning -Message "Skype Online Connector PowerShell Module is not installed on this system."
-            RETURN
-        }
-        catch
-        {
-            Write-Error -Message "Unable to import SkypeOnlineConnector PowerShell Module : $_"
-            RETURN
-        }
-    }
     
-    if ((Get-PsSession).ComputerName -notlike "*.online.lync.com")
+    if ((TestSkypeOnlineModule) -eq $true)
     {
-        $moduleVersion = (Get-Module -Name SkypeOnlineConnector).Version
-        if ($moduleVersion.Major -le "6") # Version 6 and lower do not support MFA authentication for Skype Module PowerShell; also allows use of older PSCredential objects
+        if ((TestSkypeOnlineConnection) -eq $false)
         {
-            try
+            $moduleVersion = (Get-Module -Name SkypeOnlineConnector).Version
+            if ($moduleVersion.Major -le "6") # Version 6 and lower do not support MFA authentication for Skype Module PowerShell; also allows use of older PSCredential objects
             {
-                $SkypeOnlineSession = New-CsOnlineSession -Credential (Get-Credential $UserName -Message "Enter the sign-in address and password of a Global or Skype for Business Admin") -ErrorAction STOP
-                Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
-            }
-            catch
-            {
-                $errorMessage = $_
-                if ($errorMessage -like "*Please create a new credential object*")
+                try
                 {
-                    Write-Warning -Message "Logon failed. This may be due to multi-factor being enabled for the user account and not using the latest Skype for Business Online PowerShell module."
+                    $SkypeOnlineSession = New-CsOnlineSession -Credential (Get-Credential $UserName -Message "Enter the sign-in address and password of a Global or Skype for Business Admin") -ErrorAction STOP
+                    Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
                 }
-                else
+                catch
+                {
+                    $errorMessage = $_
+                    if ($errorMessage -like "*Making sure that you have used the correct user name and password*")
+                    {
+                        Write-Warning -Message "Logon failed. Please try again and make sure that you have used the correct user name and password."
+                    }                    
+                    elseif ($errorMessage -like "*Please create a new credential object*")
+                    {
+                        Write-Warning -Message "Logon failed. This may be due to multi-factor being enabled for the user account and not using the latest Skype for Business Online PowerShell module."
+                    }
+                    else
+                    {
+                        Write-Warning -Message $_
+                    }
+                }
+            }
+            else # This should be all newer version than 6; does not support PSCredential objects but supports MFA
+            {
+                try
+                {
+                    if ($PSBoundParameters.ContainsKey("UserName"))
+                    {
+                        $SkypeOnlineSession = New-CsOnlineSession $UserName -ErrorAction STOP
+                    }
+                    else
+                    {
+                        $SkypeOnlineSession = New-CsOnlineSession -ErrorAction STOP
+                    }
+
+                    Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
+                }
+                catch
                 {
                     Write-Warning -Message $_
                 }
-            }
+            } # End of if statement for module version checking
         }
-        else # This should be all newer version than 6; does not support PSCredential objects but support MFA
+        else
         {
-            try
-            {
-                if ($PSBoundParameters.ContainsKey("UserName"))
-                {
-                    $SkypeOnlineSession = New-CsOnlineSession $UserName -ErrorAction STOP
-                }
-                else
-                {
-                    $SkypeOnlineSession = New-CsOnlineSession -ErrorAction STOP
-                }
-
-                Import-Module (Import-PSSession -Session $SkypeOnlineSession -AllowClobber -ErrorAction STOP) -Global
-            }
-            catch
-            {
-                Write-Warning -Message $_
-            }
-        }
+            Write-Warning -Message "A Skype Online PowerShell Sessions already exists. Please run Disconnect-SkypeOnline before attempting this command again."
+        } # End checking for existing Skype Online Connection
     }
     else
     {
-        Write-Warning -Message "Existing Skype Online PowerShell Sessions Exists. Please run Disconnect-SkypeOnline before attempting this command again."
-    }
+        Write-Warning -Message "Skype Online PowerShell Connector module is not installed. Please install and try again."
+        Write-Warning -Message "The module can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=39366"
+    } # End of testing module existence
 } # End of Connect-SkypeOnline
 
 # Work in Progress - Currently not in list of exported functions
@@ -742,7 +761,7 @@ Example 1 will gather the conference dial-in numbers for contoso.com based on th
     }
     catch
     {
-        Write-Warning -Message "Unable to access that dial-in page. Please check the domain name and try again. Also try to manually navigate to the page using the URL http://dialin.online.lync.com/DialInOnline/Dialin.aspx?path=$Domain."
+        Write-Warning -Message "Unable to access that dial-in page. Please check the domain name and try again. Also try to manually navigate to the page using the URL http://dialin.lync.com/DialInOnline/Dialin.aspx?path=$Domain."
         RETURN
     }
 
@@ -821,33 +840,19 @@ Output can be redirected to a file or grid-view.
 
     BEGIN
     {
-        # Check if Azure AD PowerShell Module is imported and connection created
-        if ((Get-Module).Name -notcontains "AzureAD")
+        if ((TestAzureADModule) -eq $false) {RETURN}
+
+        if ((TestAzureADConnection) -eq $false)
         {
-            Write-Verbose -Message "Connecting to MSOL Service"
             try
             {
-                Import-Module -Name "MSOnline" -ErrorAction STOP
-                $Credentials = Get-Credential -Message "Enter the sign-in address and password of an O365 Tenant Admin"
-                Connect-AzureAD -Credential $MSOnlineCredentials -ErrorAction STOP
-            }
-            catch [System.IO.FileNotFoundException]
-            {
-                Write-Warning -Message "Azure AD Module for PowerShell is not installed on this system."
-                EXIT
+                Connect-AzureAD -ErrorAction STOP
             }
             catch
             {
-                Write-Warning -Message $_
-                EXIT
-            }    
-        }
-
-        # Verify Azure Active Directory PowerShell Module (AzureAD) is installed on the PC
-        if ((Get-Module -ListAvailable).Name -notcontains "AzureAD")
-        {
-            Write-Warning -Message "Azure Active Directory PowerShell module is not installed. Please install and run command again."
-            RETURN
+                Write-Warning $_
+                CONTINUE
+            }
         }
         
         # Attempt to get tenant Account SKUs
@@ -952,24 +957,32 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
 
     [CmdletBinding()]
     param()
-    
-    # Verify Azure Active Directory PowerShell Module (AzureAD) is installed on the PC
-        if ((Get-Module -ListAvailable).Name -notcontains "AzureAD")
-        {
-            Write-Warning -Message "Azure Active Directory PowerShell module is not installed. Please install and run command again."
-            RETURN
-        }
         
-        # Attempt to get tenant Account SKUs
-        # If error is found, attempt connection to Azure AD using Connect-AzureAD
-        $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction SilentlyContinue -ErrorVariable getAzureADTenantDetail
-        if ($getAzureADTenantDetail)
+    if ((TestAzureADModule) -eq $false) {RETURN}
+
+    if ((TestAzureADConnection) -eq $false)
+    {
+        try
         {
-            Write-Warning -Message "You must connect to Azure AD before continuing"
-            Connect-AzureAD -Credential (Get-Credential -Message "Enter the sign-in name and password for an O365 Global Admin")
-            $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction STOP
+            Connect-AzureAD -ErrorAction STOP | Out-Null
         }
-    
+        catch
+        {
+            Write-Warning $_
+            CONTINUE
+        }
+    }
+
+    try
+    {
+        $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction STOP
+    }
+    catch
+    {
+        Write-Warning $_
+        RETURN
+    }
+
     foreach ($tenantSKU in $tenantSKUs)
     {
         [string]$skuFriendlyName = $null
@@ -1062,42 +1075,18 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
 
     BEGIN
     {
-        # Prerequisite Checks
-        # Verify and import SkypeOnlineConnector Module
-        # If unable to import, script will RETURN
-        if ((Get-Module).Name -notcontains "SkypeOnlineConnector")
+        if ((TestSkypeOnlineModule) -eq $true)
         {
-            Write-Verbose -Message "Importing SkypeOnlineConnector PowerShell Module"
-            try
+            if ((TestSkypeOnlineConnection) -eq $false)
             {
-                Import-Module -Name SkypeOnlineConnector -ErrorAction STOP
+                Write-Warning -Message "You must create a remote PowerShell session to Skype Online before continuing."
+                Connect-SkypeOnline
             }
-            catch [System.IO.FileNotFoundException]
-            {
-                Write-Warning -Message "SkypeOnlineConnector PowerShell Module is not installed on this system."
-                EXIT
-            }
-            catch
-            {
-                Write-Warning -Message $_
-                RETURN
-            }    
         }
-
-        # Connect to Skype Online PowerShell
-        # If unable to establish remote PowerShell session, script will RETURN
-        if ((Get-PSSession).ComputerName -notlike "*.online.lync.com")
+        else
         {
-            Write-Verbose -Message "Creating Remote PowerShell session to Skype Online Tenant"
-            try
-            {
-                Import-PSSession -Session (New-CsOnlineSession -Credential (Get-Credential -Message "Enter the sign-in address and password of an O365 Admin or Skype Online Admin") -ErrorAction STOP) -AllowClobber -ErrorAction STOP | Out-Null
-            }
-            catch
-            {
-                Write-Warning -Message $_
-                RETURN
-            }
+            Write-Warning -Message "Skype Online PowerShell Connector module is not installed. Please install and try again."
+            Write-Warning -Message "The module can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=39366"
         }
 
         # Get available policies for tenant
@@ -1126,18 +1115,18 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
                         {
                             # Attempt to assign policy
                             Grant-CsClientPolicy -Identity $ID -PolicyName $ClientPolicy -WarningAction SilentlyContinue -ErrorAction STOP
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Success: $ClientPolicy"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Success: $ClientPolicy"
                         }
                         catch
                         {
                             $errorMessage = $_
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Error: $errorMessage"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Error: $errorMessage"
                         }
                     }
                     else
                     {
                         # Output invalid client policy to error log file
-                        $output = Get-ActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Error: $ClientPolicy is not valid or does not exist"
+                        $output = GetActionOutputObject3 -Name $ID -Property "Client Policy" -Result "Error: $ClientPolicy is not valid or does not exist"
                     }
 
                     # Output final ClientPolicy Success or Fail message
@@ -1154,19 +1143,19 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
                         {
                             # Attempt to assign policy
                             Grant-CsConferencingPolicy -Identity $ID -PolicyName $ConferencingPolicy -WarningAction SilentlyContinue -ErrorAction STOP
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Success: $ConferencingPolicy"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Success: $ConferencingPolicy"
                         }
                         catch
                         {
                             # Output to error log file on policy assignment error
                             $errorMessage = $_
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Error: $errorMessage"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Error: $errorMessage"
                         }
                     }
                     else
                     {
                         # Output invalid conferencing policy to error log file
-                        $output = Get-ActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Error: $ConferencingPolicy is not valid or does not exist"
+                        $output = GetActionOutputObject3 -Name $ID -Property "Conferencing Policy" -Result "Error: $ConferencingPolicy is not valid or does not exist"
                     }
 
                     # Output final ConferencingPolicy Success or Fail message
@@ -1183,18 +1172,18 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
                         {
                             # Attempt to assign policy
                             Grant-CsExternalAccessPolicy -Identity $ID -PolicyName $ExternalAccessPolicy -WarningAction SilentlyContinue -ErrorAction STOP
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Success: $ExternalAccessPolicy"
+                            $output = GetActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Success: $ExternalAccessPolicy"
                         }
                         catch
                         {
                             $errorMessage = $_                            
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Error: $errorMessage"
+                            $output = GetActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Error: $errorMessage"
                         }
                     }
                     else
                     {
                         # Output invalid external access policy to error log file
-                        $output = Get-ActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Error: $ExternalAccessPolicy is not valid or does not exist"
+                        $output = GetActionOutputObject3 -Name $ID -Property "External Access Policy" -Result "Error: $ExternalAccessPolicy is not valid or does not exist"
                     }
 
                     # Output final ExternalAccessPolicy Success or Fail message
@@ -1211,18 +1200,18 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
                         {
                             # Attempt to assign policy
                             Grant-CsMobilityPolicy -Identity $ID -PolicyName $MobilityPolicy -WarningAction SilentlyContinue -ErrorAction STOP
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Success: $MobilityPolicy"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Success: $MobilityPolicy"
                         }
                         catch
                         {
                             $errorMessage = $_                            
-                            $output = Get-ActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Error: $errorMessage"
+                            $output = GetActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Error: $errorMessage"
                         }
                     }
                     else
                     {
                         # Output invalid external access policy to error log file
-                        $output = Get-ActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Error: $MobilityPolicy is not valid or does not exist"
+                        $output = GetActionOutputObject3 -Name $ID -Property "Mobility Policy" -Result "Error: $MobilityPolicy is not valid or does not exist"
                     }
 
                     # Output final MobilityPolicy Success or Fail message
@@ -1231,7 +1220,7 @@ Example 3 will set the user John.Does@contoso.com with a client, conferencing, e
             } # End of setting policies
             else
             {
-                $output = Get-ActionOutputObject3 -Name $ID -Property "User Validation" -Result "Error: Not a valid Skype user account"
+                $output = GetActionOutputObject3 -Name $ID -Property "User Validation" -Result "Error: Not a valid Skype user account"
                 Write-Output -InputObject $output
             }
         } # End of foreach ($ID in $Identity)
@@ -1402,7 +1391,7 @@ Example 1 will test the contoso.com domain for the required external DNS records
 # *** Non-Exported Helper Functions ***
 
 # 2 Parameter Version
-function Get-ActionOutputObject2
+function GetActionOutputObject2
 {
     param(
         [Parameter(Mandatory = $true, HelpMessage = "Name of account being modified")]
@@ -1418,10 +1407,10 @@ function Get-ActionOutputObject2
     }
 
     return $outputReturn
-} # End of Get-ActionOutputObject2
+} # End of GetActionOutputObject2
 
 # 3 Parameter Version
-function Get-ActionOutputObject3
+function GetActionOutputObject3
 {
     param(
         [Parameter(Mandatory = $true, HelpMessage = "Name of account being modified")]
@@ -1441,9 +1430,9 @@ function Get-ActionOutputObject3
     }
 
     return $outputReturn
-} # End of Get-ActionOutputObject3
+} # End of GetActionOutputObject3
 
-function New-LicenseObject
+function NewLicenseObject
 {
     param(
         [Parameter(Mandatory = $true, HelpMessage = "SkuId of the license")]
@@ -1455,6 +1444,75 @@ function New-LicenseObject
     $assignedLicensesObj = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
     $assignedLicensesObj.AddLicenses = $productLicenseObj
     return $assignedLicensesObj
+}
+
+function TestAzureADModule
+{
+    [CmdletBinding()]
+    param()
+
+    Write-Verbose -Message "Verifying if AzureAD module is installed and available"
+
+    if ((Get-Module -ListAvailable).Name -notcontains "AzureAD")
+    {
+        Write-Warning -Message "Azure Active Directory PowerShell module is not installed. Please install and try again."
+        return $false
+    }
+}
+
+function TestAzureADConnection
+{
+    [CmdletBinding()]
+    param()
+
+    try
+    {
+        Get-AzureADCurrentSessionInfo -ErrorAction STOP | Out-Null
+    }
+    catch
+    {
+        Write-Warning -Message "A connection to AzureAD must be present before continuing"
+        return $false
+    }
+}
+
+function TestSkypeOnlineModule
+{
+    [CmdletBinding()]
+    param()
+    
+    if ((Get-Module -ListAvailable).Name -notcontains "SkypeOnlineConnector")
+    {        
+        return $false
+    }
+    else
+    {
+        try
+        {
+            Import-Module -Name SkypeOnlineConnector
+            return $true
+        }
+        catch
+        {
+            Write-Warning $_
+            return $false
+        }
+    }
+}
+
+function TestSkypeOnlineConnection
+{
+    [CmdletBinding()]
+    param()
+
+    if ((Get-PsSession).ComputerName -notlike "*.online.lync.com")
+    {
+        return $false
+    }
+    else
+    {
+        return $true
+    }
 }
 
 Export-ModuleMember -Function Add-SkypeOnlineUserLicense, Connect-SkypeOnline, Disconnect-SkypeOnline,`
