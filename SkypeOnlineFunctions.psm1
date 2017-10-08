@@ -715,11 +715,14 @@ Example 1 will remove any current Skype for Business Online remote PowerShell se
 
     [bool]$sessionFound = $false
 
-    Get-PSSession | ForEach-Object {
-        if ($_.ComputerName -like "*.online.lync.com")
+    $PSSesssions = Get-PSSession
+
+    foreach ($session in $PSSesssions)
+    {
+        if ($session.ComputerName -like "*.online.lync.com")
         {
             $sessionFound = $true
-            Remove-PSSession $_
+            Remove-PSSession $session
         }
     }
 
@@ -729,6 +732,7 @@ Example 1 will remove any current Skype for Business Online remote PowerShell se
     {
         Write-Warning -Message "No remote PowerShell sessions to Skype Online currently exist"
     }
+
 } # End of Disconnect-SkypeOnline
 
 function Get-SkypeOnlineConferenceDialInNumbers
@@ -855,16 +859,6 @@ Output can be redirected to a file or grid-view.
                 CONTINUE
             }
         }
-        
-        # Attempt to get tenant Account SKUs
-        # If error is found, attempt connection to Azure AD using Connect-AzureAD
-        $tenantDetail = Get-AzureADTenantDetail -ErrorAction SilentlyContinue -ErrorVariable getAzureADTenantDetail | Out-Null
-        if ($getAzureADTenantDetail)
-        {
-            Write-Warning -Message "You must connect to Azure AD before continuing"
-            Connect-AzureAD -Credential (Get-Credential -Message "Enter the sign-in name and password for an O365 Global Admin")
-            $nullOutput = $tenantDetail = Get-AzureADTenantDetail -ErrorAction STOP # This is to test the connection to AzureAD was successful
-        }
     } # End of BEGIN
 
     PROCESS
@@ -910,8 +904,8 @@ Output can be redirected to a file or grid-view.
                         "MCOSTANDARD" {$O365License += "Skype Plan 2, "; break}
                         "STANDARDPACK" {$O365License += "E1, "; break}
                         "ENTERPRISEPACK" {$O365License += "E3, "; break}
-                        "ENTERPRISEPREMIUM" {$O365License += "E5 (Cloud PBX & Conferencing), "; break}
-                        "ENTERPRISEPREMIUM_NOPSTNCONF" {$O365License += "E5 (No Conferencing), "; break}
+                        "ENTERPRISEPREMIUM" {$O365License += "E5 (Phone System & Audio Conferencing), "; break}
+                        "ENTERPRISEPREMIUM_NOPSTNCONF" {$O365License += "E5 (No Audio Conferencing), "; break}
                         "MCOPSTN1" {$currentCallingPlan = "Domestic"; break}
                         "MCOPSTN2" {$currentCallingPlan = "Domestic & International"; break}
                         "MCOPSTNC" {$CommunicationsCreditLicense = $true; break}
