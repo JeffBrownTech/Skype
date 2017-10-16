@@ -9,29 +9,33 @@ param(
 BEGIN
 {
     # Check either server module or remote PS session exists
+    # We also temporarily change the verbosity as the Get-Module commands produce a lot of extraneous output
+    $scriptVerboseLevel = $VerbosePreference
+    $VerbosePreference = "SilentlyContinue"
     $availableModules = Get-Module -ListAvailable
     $loadedModules = Get-Module
+    $VerbosePreference = $scriptVerboseLevel
     
+    #!!! Needs work, figure out what to do
     if ($availableModules.Name -notcontains "Lync")
     {        
-        Write-Verbose -Message "Lync Management Shell not found"
+        Write-Verbose -Message "Lync Management Shell not installed"
     }
     elseif ($availableModules.Name -notcontains "SkypeForBusiness")
     {
-        Write-Verbose -Message "Skype for Business Management Shell not found"
+        Write-Verbose -Message "Skype for Business Management Shell installed"
     }
     elseif ($availableModules.Description -notlike "*/ocspowershell")
     {
-        Write-Verbose -Message "No Remote PowerShell Session found to a Lync or Skype for Business Server"            
+        Write-Verbose -Message "No Remote PowerShell Session found to a Lync or Skype for Business Server"
     }
 
-    # Get list of all Directors and Front-Ends, STD Edition Servers
-    #[System.Collections.ArrayList]$csServers = @()
-
+    # Get list of all Directors and Standard Edition/Enterprise Pools
     [array]$allFrontEndPools = @((Get-CsService -UserServer).PoolFqdn)
     [array]$allDirectorPools = @((Get-CsService -Director).PoolFqdn)
+    
+    # Find individual servers in each pool and save into single array
     [array]$allCsServers = @()
-
     if ($null -ne $allFrontEndPools[0])
     {
         foreach ($fePool in $allFrontEndPools)
@@ -40,7 +44,7 @@ BEGIN
         }
     }
 
-    if ($null -ne $allDirectorPools)
+    if ($null -ne $allDirectorPools[0])
     {
         foreach ($dirPool in $allDirectorPools)
         {
@@ -96,8 +100,8 @@ PROCESS
         }
         catch # $sip is not attached to an account but may still have leftover entries in the SQL Express RTCLOCAL database
         {
-            $title = "No User Account Found"
-            $message = "A user account was not found for $sip. Do you wish to continue searching for a leftover account attached to this address?"
+            $title = "No Active User Account Found"
+            $message = "An active user account was not found for $sip. Do you wish to continue searching for a leftover account attached to this address?"
             $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Searches and removes any leftover accounts on the servers through SQL."
             $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","Skips SQL cleanup for this account."
             $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes,$no)
@@ -127,7 +131,7 @@ PROCESS
                 
                     if ($connErrorMsg -like "*The server was not found or was not accessible*")
                     {
-                        Write-Warning -Message "$csServer was not found or is not accessible. Verify firewall rules allow UDP 1434 and SQLServr.exe as exceptions."
+                        Write-Warning -Message "$csServer was not found or was not accessible. Verify firewall rules allow UDP 1434 and SQLServr.exe as exceptions."
                     }
                     else
                     {
@@ -151,22 +155,48 @@ PROCESS
                 {
                     Write-Verbose -Message "Found $sip on $csServer, attempting removal"
                     # Remove user
-                    $sqlRemoveUserCmd = New-Object System.Data.SqlClient.SqlCommand
-                    $sqlRemoveUserCmd.Connection = $sqlConn
-                    $sqlRemoveUserCmd.CommandType = [System.Data.CommandType]'StoredProcedure'
-                    $sqlRemoveUserCmd.CommandText = "rtc.dbo.RtcDeleteResource"
-                    $sqlRemoveUserCmd.Parameters.AddWithValue("@_UserAtHost",[string]$sip)
-                    $sqlRemoveUserAdapter = New-Object System.Data.SqlClient.SqlDataAdapter $sqlRemoveUserCmd
-                    $removeUserResults = New-Object System.Data.DataSet
-                    $sqlRemoveUserAdapter.Fill($removeUserResults)
+                    try
+                    {
+                        $sqlRemoveUserCmd = New-Object System.Data.SqlClient.SqlCommand
+                        $sqlRemoveUserCmd.Connection = $sqlConn
+                        $sqlRemoveUserCmd.CommandType = [System.Data.CommandType]'StoredProcedure'
+                        $sqlRemoveUserCmd.CommandText = "rtc.dbo.RtcDeleteResource"
+                        $sqlRemoveUserCmd.Parameters.AddWithValue("@_UserAtHost",[string]$sip) | Out-Null # Prevents some wacky output to the screen
+                        $sqlRemoveUserAdapter = New-Object System.Data.SqlClient.SqlDataAdapter $sqlRemoveUserCmd
+                        $removeUserResults = New-Object System.Data.DataSet
+                        $nullResults = $sqlRemoveUserAdapter.Fill($removeUserResults)
+
+                        $outputObj = [PSCustomObject][ordered]@{
+                            RTCLocal= $csServer
+                            SipAddress = $sip
+                            Result = "SIP Address record was removed"
+                        }
+                    }
+                    catch
+                    {
+                        #Write-Warning $_
+                        $outputObj = [PSCustomObject][ordered]@{
+                            RTCLocal= $csServer
+                            SipAddress = $sip
+                            Result = "ERROR: Something happened when removing SIP Address record: $($_)"
+                        }
+                    }
+                    finally
+                    {
+                        Write-Output $outputObj
+                        $sqlConn.Close()
+                    }
                 }
                 else
                 {
-                    Write-Verbose -Message "$sip was not found on $csServer"
+                    #Write-Verbose -Message "$sip was not found on $csServer"
+                    $outputObj = [PSCustomObject][ordered]@{
+                        RTCLocal= $csServer
+                        SipAddress = $sip
+                        Result = "No SIP Address record found"
+                    }
+                    Write-Output $outputObj
                 }
-
-                # Close SQL Connection
-                $sqlConn.Close()
             } # End of foreach ($csServer in $allCsServers)
         } # End of if ($continue -eq $true
     } # End of foreach ($sip in $SipAddress)
