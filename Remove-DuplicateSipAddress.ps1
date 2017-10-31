@@ -1,4 +1,34 @@
+<#
+.SYNOPSIS
+Disables active user accounts and removes account resource from servers.
 
+.DESCRIPTION
+This script removes Lync or Skype for Business user accounts that have
+been removed but still exist in the RTCLOCAL instance on Standard Edition,
+Front End, and Director servers. The script will first check if the SIP Address
+is attached to an active account. If so, it will prompt to disable the account
+before running the clean up actions against SQL Express databases.
+
+.PARAMETER SipAddress
+This is the SIP Address of the user account to search for and to remove from
+the SQL databases.
+
+.EXAMPLE
+.\Remove-DuplicateSIPAddress.ps1 -SipAddress john@contoso.com
+Example 1 will search
+
+.NOTES
+Written by Jeff Brown
+Jeff@JeffBrown.tech
+@JeffWBrown
+www.jeffbrown.tech
+
+Any and all technical advice, scripts, and documentation are provided as is with no guarantee.
+Always review any code and steps before applying to a production system to understand their full impact.
+
+Version Notes
+V1.0 - 10/31/2017 - Initial Version
+#>
 
 [CmdletBinding()]
 param(
@@ -9,28 +39,37 @@ param(
 BEGIN
 {
     # Check either server module or remote PS session exists
-    # We also temporarily change the verbosity as the Get-Module commands produce a lot of extraneous output
+    # We also temporarily change the verbosity as the Get-Module commands produce a lot of extraneous output if using the -Verbose parameter
     $scriptVerboseLevel = $VerbosePreference
     $VerbosePreference = "SilentlyContinue"
     $availableModules = Get-Module -ListAvailable
     $loadedModules = Get-Module
     $VerbosePreference = $scriptVerboseLevel
-    
-    #!!! Needs work, figure out what to do
-    if ($availableModules.Name -notcontains "Lync")
-    {        
-        Write-Verbose -Message "Lync Management Shell not installed"
-    }
-    elseif ($availableModules.Name -notcontains "SkypeForBusiness")
-    {
-        Write-Verbose -Message "Skype for Business Management Shell installed"
-    }
-    elseif ($availableModules.Description -notlike "*/ocspowershell")
-    {
-        Write-Verbose -Message "No Remote PowerShell Session found to a Lync or Skype for Business Server"
-    }
+    [bool]$foundModule = $false
 
+    if ($availableModules.Name -contains "Lync" -or $availableModules.Name -contains "SkypeForBusiness")
+    {        
+        Write-Verbose -Message "PowerShell Management Shell module is installed."
+        $foundModule = $true
+    }
+    
+    if ($availableModules.Description -like "*/ocspowershell")
+    {
+        Write-Verbose -Message "Remote PowerShell Session is created."
+        $foundModule = $true
+    }
+    
+    if ($foundModule -eq $false)
+    {
+        Write-Warning -Message "No Lync or Skype for Business Management Shell modules or remote PowerShell Sessions found."
+        Write-Warning -Message "These are required for this script as it relies on native Lync/Skype for Business cmdlets."
+        Write-Warning -Message "Please verify these are installed or create before running script again."
+        Write-Warning -Message "It is recommended to run this from a Lync or Skype for Business Server."
+        EXIT
+    }
+    
     # Get list of all Directors and Standard Edition/Enterprise Pools
+    Write-Verbose -Message "Gathering all Front End and Director Pools in environment."
     [array]$allFrontEndPools = @((Get-CsService -UserServer).PoolFqdn)
     [array]$allDirectorPools = @((Get-CsService -Director).PoolFqdn)
     
@@ -40,6 +79,7 @@ BEGIN
     {
         foreach ($fePool in $allFrontEndPools)
         {
+            Write-Verbose -Message "Gathering all servers in $fePool."
             $allCsServers += (Get-CsComputer -Pool $fePool).Fqdn
         }
     }
@@ -48,6 +88,7 @@ BEGIN
     {
         foreach ($dirPool in $allDirectorPools)
         {
+            Write-Verbose -Message "Gathering all servers in $dirPool."
             $allCsServers += (Get-CsComputer -Pool $dirPool).Fqdn
         }
     }
@@ -65,7 +106,7 @@ PROCESS
             $sipUserInfo = Get-CsUser -Identity $sip -ErrorAction STOP
             
             $title = "Existing User Account Found"
-            $message = "A user account currently exists for $sip. Do you wish to disable and remove this account (this will result in data loss)?"
+            $message = "A user account currently exists for $sip on pool $($sipUserInfo.RegistrarPool). Do you wish to disable and remove this account (this will result in data loss)?"
             $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Disables and removes the user account."
             $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","Skips disabling account and SQL cleanup."
             $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes,$no)
@@ -189,13 +230,13 @@ PROCESS
                 }
                 else
                 {
-                    #Write-Verbose -Message "$sip was not found on $csServer"
                     $outputObj = [PSCustomObject][ordered]@{
                         RTCLocal= $csServer
                         SipAddress = $sip
                         Result = "No SIP Address record found"
                     }
                     Write-Output $outputObj
+                    $sqlConn.Close()
                 }
             } # End of foreach ($csServer in $allCsServers)
         } # End of if ($continue -eq $true
