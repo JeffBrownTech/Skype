@@ -15,7 +15,9 @@ the SQL databases.
 
 .EXAMPLE
 .\Remove-DuplicateSipAddress.ps1 -SipAddress john@contoso.com
-Example 1 will search
+Example 1 will see if john@contoso.com is attached to an enabled user account.
+If it is, it will prompt to disable the user account, then run clean up actions
+on each server.
 
 .NOTES
 Written by Jeff Brown
