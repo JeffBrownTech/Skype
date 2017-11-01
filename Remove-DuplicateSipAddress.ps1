@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Disables active user accounts and removes account resource from servers.
+Disables user accounts and removes account resource from servers.
 
 .DESCRIPTION
 This script removes Lync or Skype for Business user accounts that have
@@ -14,7 +14,7 @@ This is the SIP Address of the user account to search for and to remove from
 the SQL databases.
 
 .EXAMPLE
-.\Remove-DuplicateSIPAddress.ps1 -SipAddress john@contoso.com
+.\Remove-DuplicateSipAddress.ps1 -SipAddress john@contoso.com
 Example 1 will search
 
 .NOTES
@@ -43,7 +43,6 @@ BEGIN
     $scriptVerboseLevel = $VerbosePreference
     $VerbosePreference = "SilentlyContinue"
     $availableModules = Get-Module -ListAvailable
-    $loadedModules = Get-Module
     $VerbosePreference = $scriptVerboseLevel
     [bool]$foundModule = $false
 
@@ -75,6 +74,8 @@ BEGIN
     
     # Find individual servers in each pool and save into single array
     [array]$allCsServers = @()
+    
+    # Check to see if the first element in the array is empty; if not, find all servers in the pool    
     if ($null -ne $allFrontEndPools[0])
     {
         foreach ($fePool in $allFrontEndPools)
@@ -114,9 +115,11 @@ PROCESS
 
             switch ($answer)
             {
+                # Yes answer
                 0 {
                     $continue = $true
                     
+                    # Attempt to disable/remove user account
                     try
                     {
                         Disable-CsUser -Identity $sip -ErrorAction STOP
@@ -136,6 +139,7 @@ PROCESS
 			        } until ($null -eq $userEnabledCheck)
                 } # End of switch 0
                 
+                # No answer
                 1 {$continue = $false}
             }
         }
@@ -150,7 +154,10 @@ PROCESS
 
             switch ($answer)
             {
-                0 {$continue = $true} #Disable user
+                # Yes answer
+                0 {$continue = $true}
+                
+                # No answer
                 1 {$continue = $false}
             }
         }
@@ -182,7 +189,7 @@ PROCESS
                     CONTINUE
                 }
 
-                # Create SQL Query
+                # Create SQL Query and get results
                 $sqlSearchUserCmd = New-Object System.Data.SqlClient.SqlCommand
                 $sqlSearchUserCmd.Connection = $sqlConn
                 $searchQuery = "SELECT * FROM [rtc].[dbo].[Resource] WHERE [UserAtHost]='$sip'"
@@ -195,6 +202,7 @@ PROCESS
                 if ($null -ne $searchResults.Tables.UserAtHost)
                 {
                     Write-Verbose -Message "Found $sip on $csServer, attempting removal"
+                    
                     # Remove user
                     try
                     {
@@ -205,7 +213,7 @@ PROCESS
                         $sqlRemoveUserCmd.Parameters.AddWithValue("@_UserAtHost",[string]$sip) | Out-Null # Prevents some wacky output to the screen
                         $sqlRemoveUserAdapter = New-Object System.Data.SqlClient.SqlDataAdapter $sqlRemoveUserCmd
                         $removeUserResults = New-Object System.Data.DataSet
-                        $nullResults = $sqlRemoveUserAdapter.Fill($removeUserResults)
+                        $nullResults = $sqlRemoveUserAdapter.Fill($removeUserResults) # Hides output to the screen by saving to a variable
 
                         $outputObj = [PSCustomObject][ordered]@{
                             RTCLocal= $csServer
@@ -237,8 +245,8 @@ PROCESS
                     }
                     Write-Output $outputObj
                     $sqlConn.Close()
-                }
+                } # End of if ($null -ne $searchResults.Tables.UserAtHost)
             } # End of foreach ($csServer in $allCsServers)
-        } # End of if ($continue -eq $true
+        } # End of if ($continue -eq $true)
     } # End of foreach ($sip in $SipAddress)
 } # End of PROCESS
