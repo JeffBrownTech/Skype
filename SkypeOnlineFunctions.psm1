@@ -1122,7 +1122,7 @@ RuleIndex Name            Pattern    Translation
     {
         Write-Warning -Message "$DialPlan is not a valid dial plan for the tenant. Please try again."
     }
-}
+} # End of Remove-SkypeOnlineNormalizationRule
 
 function Set-SkypeOnlineUserPolicy
 {
