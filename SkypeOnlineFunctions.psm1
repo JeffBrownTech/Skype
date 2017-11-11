@@ -1011,6 +1011,34 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
 
 function Remove-SkypeOnlineNormalizationRule
 {
+<#
+.SYNOPSIS
+Removes a normalization rule from a tenant dial plan.
+
+.DESCRIPTION
+This command will display the normalization rules for a tenant dial plan in a list with
+index numbers. After choosing one of the rule index numbers, the rule will be removed from
+the tenant dial plan. This command requires a remote PowerShell session to Skype for Business Online.
+
+.PARAMETER DialPlan
+This is the name of a valid dial plan for the tenant. To view available tenant dial plans,
+use the command Get-CsTenantDialPlan.
+
+.EXAMPLE
+Remove-SkypeOnlineNormalizationRule -DialPlan US-OK-OKC-DialPlan
+Example 1 will display the availble normalization rules to remove from dial plan US-OK-OKC-DialPlan.
+
+.NOTES
+The dial plan rules will display in format similar the example below:
+
+RuleIndex Name            Pattern    Translation
+--------- ----            -------    -----------
+        0 Intl Dialing    ^011(\d+)$ +$1
+        1 Extension Rule  ^(\d{5})$  +155512$1
+        2 Long Distance   ^1(\d+)$   +1$1
+        3 Default         ^(\d+)$    +1$1
+#>
+
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, HelpMessage="Enter the name of the dial plan to modify the normalization rules.")]
