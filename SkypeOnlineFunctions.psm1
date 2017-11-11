@@ -1009,6 +1009,40 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
     } # End of foreach ($tenantSKU in $tenantSKUs}
 } # End of Get-SkypeOnlineTenantLicenses
 
+function Remove-SkypeOnlineNormalizationRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, HelpMessage="Enter the name of the dial plan to modify the normalization rules.")]
+        [string]$DialPlan
+    )
+
+    if ((TestSkypeOnlineModule) -eq $true)
+    {
+        if ((TestSkypeOnlineConnection) -eq $false)
+        {
+            Write-Warning -Message "You must create a remote PowerShell session to Skype Online before continuing."
+            Connect-SkypeOnline
+        }
+    }
+    else
+    {
+        Write-Warning -Message "Skype Online PowerShell Connector module is not installed. Please install and try again."
+        Write-Warning -Message "The module can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=39366"
+    }
+
+    $dialPlan = Get-CsTenantDialPlan -Identity $DialPlan -ErrorAction SilentlyContinue
+
+    if ($null -ne $dialPlan)
+    {
+        Write-Host "valid"
+    }
+    else
+    {
+        Write-Warning -Message "$dialPlan is not a valid dial plan for the tenant. Please try again."
+    }    
+}
+
 function Set-SkypeOnlineUserPolicy
 {
 <#
