@@ -1031,16 +1031,69 @@ function Remove-SkypeOnlineNormalizationRule
         Write-Warning -Message "The module can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=39366"
     }
 
-    $dialPlan = Get-CsTenantDialPlan -Identity $DialPlan -ErrorAction SilentlyContinue
+    $dpInfo = Get-CsTenantDialPlan -Identity $DialPlan -ErrorAction SilentlyContinue
 
-    if ($null -ne $dialPlan)
+    if ($null -ne $dpInfo)
     {
-        Write-Host "valid"
+        $currentNormRules = $dpInfo.NormalizationRules
+        [int]$ruleIndex = 0
+        [int]$ruleCount = $currentNormRules.Count
+        [array]$ruleArray = @()
+        [array]$indexArray = @()
+
+        if ($ruleCount -ne 0)
+        {
+            foreach ($normRule in $dpInfo.NormalizationRules)
+            {
+                $output = [PSCustomObject][ordered]@{
+                    'RuleIndex' = $ruleIndex
+                    'Name' = $normRule.Name
+                    'Pattern' = $normRule.Pattern
+                    'Translation' = $normRule.Translation
+                }
+
+                $ruleArray += $output
+                $indexArray += $ruleIndex
+                $ruleIndex++
+            } # End of foreach ($normRule in $dpInfo.NormalizationRules)
+
+            # Displays rules to the screen with RuleIndex added
+            $ruleArray | Out-Host
+
+            do
+            {
+                $indexToRemove = Read-Host -Prompt "Enter the Rule Index of the normalization rule to remove from the dial plan (leave blank to quit without changes)"
+                
+                if ($indexToRemove -notin $indexArray -and $indexToRemove.Length -ne 0)
+                {
+                    Write-Warning -Message "That is not a valid Rule Index. Please try again or leave blank to quit."
+                }
+            } until ($indexToRemove -in $indexArray -or $indexToRemove.Length -eq 0)
+
+            if ($indexToRemove.Length -eq 0) {RETURN}
+
+            # If there is more than 1 rule left, remove the rule and set to new normalization rules
+            # If there is only 1 rule left, we have to set -NormalizationRules to $null
+            if ($ruleCount -ne 1)
+            {
+                $newNormRules = $currentNormRules
+                $newNormRules.Remove($currentNormRules[$indexToRemove])
+                Set-CsTenantDialPlan -Identity $DialPlan -NormalizationRules $newNormRules
+            }
+            else
+            {
+                Set-CsTenantDialPlan -Identity $DialPlan -NormalizationRules $null
+            }
+        }
+        else
+        {
+            Write-Warning -Message "$DialPlan does not contain any normalization rules."
+        }
     }
     else
     {
-        Write-Warning -Message "$dialPlan is not a valid dial plan for the tenant. Please try again."
-    }    
+        Write-Warning -Message "$DialPlan is not a valid dial plan for the tenant. Please try again."
+    }
 }
 
 function Set-SkypeOnlineUserPolicy
@@ -1546,4 +1599,4 @@ function TestSkypeOnlineConnection
 
 Export-ModuleMember -Function Add-SkypeOnlineUserLicense, Connect-SkypeOnline, Disconnect-SkypeOnline,`
                               Get-SkypeOnlineConferenceDialInNumbers, Get-SkypeOnlineUserLicense, Get-SkypeOnlineTenantLicenses, Set-SkypeOnlineUserPolicy,`
-                              Test-SkypeOnlineExternalDNS
+                              Remove-SkypeOnlineNormalizationRule, Test-SkypeOnlineExternalDNS
