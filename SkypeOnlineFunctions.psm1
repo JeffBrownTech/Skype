@@ -16,6 +16,7 @@ Any and all technical advice, scripts, and documentation are provided as is with
 Always review any code and steps before applying to a production system to understand their full impact.
 
 Version Notes
+V1.2 - 11/11/2017 - Added Remove-SkypeOnlineNormalizationRule cmdlet
 V1.1 - 10/8/2017 - Add non-exported helper functions for AzureAD and Skype connections; fixed a few errors
 V1.0 - 10/2/2017 - Initial Version
 #>
