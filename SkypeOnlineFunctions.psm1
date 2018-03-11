@@ -16,6 +16,7 @@ Any and all technical advice, scripts, and documentation are provided as is with
 Always review any code and steps before applying to a production system to understand their full impact.
 
 Version Notes
+V1.3 - 3/11/2018 - Update new license names; added Common Area Phone to license-related commands
 V1.2 - 11/11/2017 - Added Remove-SkypeOnlineNormalizationRule cmdlet
 V1.1 - 10/8/2017 - Add non-exported helper functions for AzureAD and Skype connections; fixed a few errors
 V1.0 - 10/2/2017 - Initial Version
@@ -23,9 +24,8 @@ V1.0 - 10/2/2017 - Initial Version
 
 # *** Exported Functions ***
 
-function Add-SkypeOnlineUserLicense
-{
-<#
+function Add-SkypeOnlineUserLicense {
+    <#
 .SYNOPSIS
 Adds one or more Skype related licenses to a user account.
 
@@ -56,7 +56,7 @@ Adds an E5 without Audio Conferencing license to the user account.
 Adds a Audio Conferencing add-on license to the user account.
 
 .PARAMETER AddPhoneSystem
-Adds a Cloud PBX add-on license to the user account.
+Adds a Phone System add-on license to the user account.
 
 .PARAMETER AddDomesticCallingPlan
 Adds a Domestic Calling Plan add-on license to the user account.
@@ -65,7 +65,10 @@ Adds a Domestic Calling Plan add-on license to the user account.
 Adds an International Calling Plan add-on license to the user account.
 
 .PARAMETER AddCommunicationsCredit
-Adds a PSTN Consumption add-on license to the user account.
+Adds an Communications Credit add-on license to the user account.
+
+.PARAMETER AddCommonAreaPhone
+Adds a Common Area Phone license to the user account.
 
 .EXAMPLE
 Add-SkypeOnlineUserLicense -Identity Joe@contoso.com -AddE3 -AddPhoneSystem
@@ -84,54 +87,57 @@ The command will test to see if the license exists in the tenant as well as if t
 has the licensed assigned. It does not keep track or take into account the number of licenses
 available before attempting to assign the license.
 #>
-    [CmdletBinding(DefaultParameterSetName='AddDomestic')]
+    [CmdletBinding(DefaultParameterSetName = 'AddDomestic')]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
-        [Alias("UPN","UserPrincipalName","Username")]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
+        [Alias("UPN", "UserPrincipalName", "Username")]
         [string[]]$Identity,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddSkypeStandalone,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddE1,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddE3,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddE5,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddE5NoAudioConferencing,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddAudioConferencing,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddPhoneSystem,
 
-        [Parameter(ParameterSetName='AddDomestic')]
+        [Parameter(ParameterSetName = 'AddDomestic')]
         [switch]$AddDomesticCallingPlan,
 
-        [Parameter(ParameterSetName='AddInternational')]
+        [Parameter(ParameterSetName = 'AddInternational')]
         [switch]$AddInternationalCallingPlan,
 
-        [Parameter(ParameterSetName='AddDomestic')]
-        [Parameter(ParameterSetName='AddInternational')]
-        [switch]$AddCommunicationsCredit
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
+        [switch]$AddCommunicationsCredit,    
+
+        [Parameter(ParameterSetName = 'AddDomestic')]
+        [Parameter(ParameterSetName = 'AddInternational')]
+        [switch]$AddCommonAreaPhone
     )
 
-    BEGIN
-    {
+    BEGIN {
         <#
         # Verify Azure Active Directory PowerShell Module (AzureAD) is installed on the PC
         if ((Get-Module -ListAvailable).Name -notcontains "AzureAD")
@@ -153,34 +159,27 @@ available before attempting to assign the license.
                 
         if ((TestAzureADModule) -eq $false) {RETURN}
 
-        if ((TestAzureADConnection) -eq $false)
-        {
-            try
-            {
+        if ((TestAzureADConnection) -eq $false) {
+            try {
                 Connect-AzureAD -ErrorAction STOP | Out-Null
             }
-            catch
-            {
+            catch {
                 Write-Warning $_
                 CONTINUE
             }
         }
 
-        try
-        {
+        try {
             $tenantSKUs = Get-AzureADSubscribedSku -ErrorAction STOP
         }
-        catch
-        {
+        catch {
             Write-Warning $_
             RETURN
         }
 
         # Build Skype SKU Variables from Available Licenses in the Tenant
-        foreach ($tenantSKU in $tenantSKUs)
-        {
-            switch ($tenantSKU.SkuPartNumber)
-            {
+        foreach ($tenantSKU in $tenantSKUs) {
+            switch ($tenantSKU.SkuPartNumber) {
                 "MCOPSTN1" {$DomesticCallingPlan = $tenantSKU.SkuId; break}
                 "MCOPSTN2" {$InternationalCallingPlan = $tenantSKU.SkuId; break}
                 "MCOMEETADV" {$AudioConferencing = $tenantSKU.SkuId; break}
@@ -188,57 +187,47 @@ available before attempting to assign the license.
                 "ENTERPRISEPREMIUM" {$E5WithPhoneSystem = $tenantSKU.SkuId; break}
                 "ENTERPRISEPREMIUM_NOPSTNCONF" {$E5NoAudioConferencing = $tenantSKU.SkuId; break}
                 "ENTERPRISEPACK" {$E3 = $tenantSKU.SkuId; break}
-                "STANDARDPACK" {$E1 = $tenantSKU.SkuId;break}
+                "STANDARDPACK" {$E1 = $tenantSKU.SkuId; break}
                 "MCOSTANDARD" {$SkypeStandalonePlan = $tenantSKU.SkuId; break}
                 "MCOPSTNC" {$CommunicationsCredit = $tenantSKU.SkuId; break}
+                "MCOCAP" {$CommonAreaPhone = $tenantSKU.SkuId; break}
             } # End of switch statement
         } # End of foreach $tenantSKUs
     } # End of BEGIN
 
-    PROCESS
-    {
-        foreach ($ID in $Identity)
-        {
-            try
-            {
+    PROCESS {
+        foreach ($ID in $Identity) {
+            try {
                 Get-AzureADUser -ObjectId $ID -ErrorAction STOP | Out-Null
             }
-            catch
-            {
+            catch {
                 $output = GetActionOutputObject2 -Name $ID -Result "Not a valid user account"
                 Write-Output $output
                 continue
             }
 
             # Get user's currently assigned licenses
-            $userCurrentLicenses  = (Get-AzureADUserLicenseDetail -ObjectId $ID).SkuId
+            $userCurrentLicenses = (Get-AzureADUserLicenseDetail -ObjectId $ID).SkuId
 
             # Skype Standalone Plan
-            if ($AddSkypeStandalone -eq $true)
-            {
-                if ($null -ne $SkypeStandalonePlan)
-                {
-                    if ($userCurrentLicenses -notcontains $SkypeStandalonePlan)
-                    {
-                        try
-                        {
+            if ($AddSkypeStandalone -eq $true) {
+                if ($null -ne $SkypeStandalonePlan) {
+                    if ($userCurrentLicenses -notcontains $SkypeStandalonePlan) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $SkypeStandalonePlan -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $SkypeStandalonePlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP                                
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Skype Standalone Plan license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Skype Standalone Plan license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Skype Standalone Plan"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Skype Standalone Plan licenses found in tenant"
                 }
 
@@ -246,31 +235,24 @@ available before attempting to assign the license.
             }
 
             # E1
-            if ($AddE1 -eq $true)
-            {
-                if ($null -ne $E1)
-                {
-                    if ($userCurrentLicenses -notcontains $E1)
-                    {
-                        try
-                        {
+            if ($AddE1 -eq $true) {
+                if ($null -ne $E1) {
+                    if ($userCurrentLicenses -notcontains $E1) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E1 -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $E1
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E1 license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E1 license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E1"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E1 licenses found in tenant"
                 }
 
@@ -278,33 +260,26 @@ available before attempting to assign the license.
             }
 
             # E3
-            if ($AddE3 -eq $true)
-            {
+            if ($AddE3 -eq $true) {
                 # Verify if E3 licenses exist in tenant
-                if ($null -ne $E3)
-                {
+                if ($null -ne $E3) {
                     # Verify if user does not have the license assigned
-                    if ($userCurrentLicenses -notcontains $E3)
-                    {
-                        try
-                        {
+                    if ($userCurrentLicenses -notcontains $E3) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E3 -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $E3
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E3 license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E3 license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = Get-ActionOutputObject -Name $ID -Result "INFO: User already assigned E3"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E3 licenses found in tenant"
                 }
 
@@ -312,31 +287,24 @@ available before attempting to assign the license.
             }
 
             # E5 with Phone System
-            if ($AddE5 -eq $true)
-            {
-                if ($null -ne $E5WithPhoneSystem)
-                {
-                    if ($userCurrentLicenses -notcontains $E5WithPhoneSystem)
-                    {
-                        try
-                        {
+            if ($AddE5 -eq $true) {
+                if ($null -ne $E5WithPhoneSystem) {
+                    if ($userCurrentLicenses -notcontains $E5WithPhoneSystem) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E5WithPhoneSystem -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $E5WithPhoneSystem
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E5 license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E5 licenses found in tenant"
                 }
 
@@ -344,65 +312,51 @@ available before attempting to assign the license.
             }
 
             # E5 No PSTN Conferencing
-            if ($AddE5NoAudioConferencing -eq $true)
-            {
-                if ($null -ne $E5NoAudioConferencing)
-                {
-                    if ($userCurrentLicenses -notcontains $E5NoAudioConferencing)
-                    {
-                        try
-                        {
+            if ($AddE5NoAudioConferencing -eq $true) {
+                if ($null -ne $E5NoAudioConferencing) {
+                    if ($userCurrentLicenses -notcontains $E5NoAudioConferencing) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $E5NoAudioConferencing -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $E5NoAudioConferencing
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: E5 without Audio Conferencing license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign E5 without Audio Conferencing license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned E5 without Audio Conferencing"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No E5 without Audio Conferencing licenses found in tenant"
                 }
 
                 Write-Output $output
             }
 
-            # PSTN Conferencing Add-On
-            if ($AddAudioConferencing -eq $true)
-            {
-                # Checking to see if $PSTNConferencingSKU exists
-                if ($null -ne $AudioConferencing)
-                {
-                    if ($userCurrentLicenses -notcontains $AudioConferencing)
-                    {
-                        # Adding PSTN Conferencing SKU to user account
-                        try
-                        {
+            # Audio Conferencing Add-On
+            if ($AddAudioConferencing -eq $true) {
+                # Checking to see if $AudioConferencing exists
+                if ($null -ne $AudioConferencing) {
+                    if ($userCurrentLicenses -notcontains $AudioConferencing) {
+                        # Adding Audio Conferencing SKU to user account
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $AudioConferencing -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $AudioConferencing
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Audio Conferencing add-on license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Audio Conferencing add-on license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Audio Conferencing"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Audio Conferencing add-on licenses found in tenant"
                 }
 
@@ -411,31 +365,24 @@ available before attempting to assign the license.
             }
 
             # Phone System Add-On
-            if ($AddPhoneSystem -eq $true)
-            {
-                if ($null -ne $PhoneSystem)
-                {
-                    if ($userCurrentLicenses -notcontains $PhoneSystem)
-                    {
-                        try
-                        {
+            if ($AddPhoneSystem -eq $true) {
+                if ($null -ne $PhoneSystem) {
+                    if ($userCurrentLicenses -notcontains $PhoneSystem) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $PhoneSystem -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $PhoneSystem
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Phone System add-on license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Phone System add-on license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Phone System add-on"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Phone System add-on licenses found in tenant"
                 }
 
@@ -443,31 +390,24 @@ available before attempting to assign the license.
             }
 
             # Domestic Calling Plan
-            if ($AddDomesticCallingPlan -eq $true)
-            {
-                if ($null -ne $DomesticCallingPlan)
-                {
-                    if ($userCurrentLicenses -notcontains $DomesticCallingPlan)
-                    {
-                        try
-                        {
+            if ($AddDomesticCallingPlan -eq $true) {
+                if ($null -ne $DomesticCallingPlan) {
+                    if ($userCurrentLicenses -notcontains $DomesticCallingPlan) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $DomesticCallingPlan -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $DomesticCallingPlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Domestic Calling Plan license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Domestic Calling Plan license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Domestic Calling Plan"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Domestic Calling Plan licenses found in tenant"
                 }
 
@@ -475,64 +415,75 @@ available before attempting to assign the license.
             }
 
             # Domestic & International Calling Plan
-            if ($AddInternationalCallingPlan -eq $true)
-            {
-                if ($null -ne $InternationalCallingPlan)
-                {
-                    if ($userCurrentLicenses -notcontains $InternationalCallingPlan)
-                    {
-                        try
-                        {
+            if ($AddInternationalCallingPlan -eq $true) {
+                if ($null -ne $InternationalCallingPlan) {
+                    if ($userCurrentLicenses -notcontains $InternationalCallingPlan) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $InternationalCallingPlan -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $InternationalCallingPlan
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: International Calling Plan license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign International Calling Plan license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned International Calling Plan"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No International Calling Plan licenses found in tenant"
                 }
 
                 Write-Output $output
             }
 
-            # PSTN Consumption
-            if ($AddCommunicationsCredit -eq $true)
-            {
-                if ($null -ne $CommunicationsCredit)
-                {
-                    if ($userCurrentLicenses -notcontains $CommunicationsCredit)
-                    {
-                        try
-                        {
+            # Communications Credit
+            if ($AddCommunicationsCredit -eq $true) {
+                if ($null -ne $CommunicationsCredit) {
+                    if ($userCurrentLicenses -notcontains $CommunicationsCredit) {
+                        try {
                             #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $CommunicationsCredit -ErrorAction STOP
                             $license = NewLicenseObject -SkuId $CommunicationsCredit
                             Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
                             $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Communications Credit license assigned"
                         }
-                        catch
-                        {
+                        catch {
                             $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Communications Credit license: $_"
                         }
                     }
-                    else
-                    {
+                    else {
                         $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Communications Credit License"
                     }
                 }
-                else
-                {
+                else {
                     $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Communications Credit licenses found in tenant"
+                }
+
+                Write-Output $output
+            }
+
+            # Common Area Phone
+            if ($AddCommonAreaPhone -eq $true) {
+                if ($null -ne $CommonAreaPhone) {
+                    if ($userCurrentLicenses -notcontains $CommonAreaPhone) {
+                        try {
+                            #Set-MsolUserLicense -UserPrincipalName $ID -AddLicenses $CommonAreaPhone -ErrorAction STOP
+                            $license = NewLicenseObject -SkuId $CommonAreaPhone
+                            Set-AzureADUserLicense -ObjectId $ID -AssignedLicenses $license -ErrorAction STOP
+                            $output = GetActionOutputObject2 -Name $ID -Result "SUCCESS: Common Area Phone license assigned"
+                        }
+                        catch {
+                            $output = GetActionOutputObject2 -Name $ID -Result "ERROR: Unable to assign Common Area Phone license: $_"
+                        }
+                    }
+                    else {
+                        $output = GetActionOutputObject2 -Name $ID -Result "INFO: User already assigned Common Area Phone License"
+                    }
+                }
+                else {
+                    $output = GetActionOutputObject2 -Name $ID -Result "WARNING: No Common Area Phone licenses found in tenant"
                 }
 
                 Write-Output $output
@@ -907,6 +858,7 @@ Output can be redirected to a file or grid-view.
                         "ENTERPRISEPACK" {$O365License += "E3, "; break}
                         "ENTERPRISEPREMIUM" {$O365License += "E5 (Phone System & Audio Conferencing), "; break}
                         "ENTERPRISEPREMIUM_NOPSTNCONF" {$O365License += "E5 (No Audio Conferencing), "; break}
+                        "MCOCAP" {$O365License += "Common Area Phone, "; break}
                         "MCOPSTN1" {$currentCallingPlan = "Domestic"; break}
                         "MCOPSTN2" {$currentCallingPlan = "Domestic & International"; break}
                         "MCOPSTNC" {$CommunicationsCreditLicense = $true; break}
@@ -989,6 +941,7 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
             "MCOPSTNC" {$skuFriendlyName = "Communications Credit Add-On"; break}
             "MCOMEETADV" {$skuFriendlyName = "Audio Conferencing Add-On"; break}
             "MCOEV" {$skuFriendlyName = "Phone System Add-On"; break}
+            "MCOCAP" {$skuFriendlyName = "Common Area Phone"; break}
             "ENTERPRISEPREMIUM" {$skuFriendlyName = "Enterprise E5 with Phone System"; break}
             "ENTERPRISEPREMIUM_NOPSTNCONF" {$skuFriendlyName = "Enterprise E5 Without Audio Conferencing"; break}
             "ENTERPRISEPACK" {$skuFriendlyName = "Enterprise E3"; break}
