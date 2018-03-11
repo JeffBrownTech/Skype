@@ -829,6 +829,7 @@ Output can be redirected to a file or grid-view.
                     CallingPlan = "Invalid User"
                     CommunicationsCreditLicense = "Invalid User"
                     AudioConferencingAddOn = "Invalid User"
+                    CommoneAreaPhoneLicense = "Invalid User"
                 }
 
                 Write-Output $output
@@ -842,6 +843,7 @@ Output can be redirected to a file or grid-view.
             [string]$currentCallingPlan = "Not Assigned"
             [bool]$CommunicationsCreditLicense = $false
             [bool]$AudioConferencingAddOn = $false
+            [bool]$CommonAreaPhoneLicense = $false
 
             if ($null -ne $assignedLicenses)
             {
@@ -856,9 +858,9 @@ Output can be redirected to a file or grid-view.
                         "MCOSTANDARD" {$O365License += "Skype Plan 2, "; break}
                         "STANDARDPACK" {$O365License += "E1, "; break}
                         "ENTERPRISEPACK" {$O365License += "E3, "; break}
-                        "ENTERPRISEPREMIUM" {$O365License += "E5 (Phone System & Audio Conferencing), "; break}
+                        "ENTERPRISEPREMIUM" {$O365License += "E5, "; break}
                         "ENTERPRISEPREMIUM_NOPSTNCONF" {$O365License += "E5 (No Audio Conferencing), "; break}
-                        "MCOCAP" {$O365License += "Common Area Phone, "; break}
+                        "MCOCAP" {$CommonAreaPhoneLicense = $true; break}
                         "MCOPSTN1" {$currentCallingPlan = "Domestic"; break}
                         "MCOPSTN2" {$currentCallingPlan = "Domestic & International"; break}
                         "MCOPSTNC" {$CommunicationsCreditLicense = $true; break}
@@ -872,11 +874,12 @@ Output can be redirected to a file or grid-view.
             }
             
             $output = [PSCustomObject][ordered]@{
-                User = $User
-                License = $O365License.TrimEnd(", ") # Removes any trailing ", " at the end of the string
-                CallingPlan = $currentCallingPlan
+                User                        = $User                
+                License                     = $O365License.TrimEnd(", ") # Removes any trailing ", " at the end of the string                
+                CallingPlan                 = $currentCallingPlan                
                 CommunicationsCreditLicense = $CommunicationsCreditLicense
-                AudioConferencingAddOn = $AudioConferencingAddOn
+                AudioConferencingAddOn      = $AudioConferencingAddOn
+                CommoneAreaPhoneLicense     = $CommonAreaPhoneLicense                
             }
 
             Write-Output $output
