@@ -951,6 +951,7 @@ Requires the Azure Active Directory PowerShell module to be installed and authen
             "STANDARDPACK" {$skuFriendlyName = "Enterprise E1"; break}
             "MCOSTANDARD" {$skuFriendlyName = "Skype for Business Online Standalone Plan 2"; break}
             "O365_BUSINESS_PREMIUM" {$skuFriendlyName = "O365 Business Premium"; break}
+            "PHONESYSTEM_VIRTUALUSER" {$skuFriendlyName = "Phone System - Virtual User"; break}
         }
         
         if ($skuFriendlyName.Length -gt 0)
